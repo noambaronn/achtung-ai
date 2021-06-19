@@ -1,19 +1,20 @@
 import numpy as np
 from numba import njit
+import keyboard
+
+import time
 
 from constants import *
 from screen_globals import *
 from snake import *
 
-def bestChoice(grid: np.ndarray, steps: np.ndarray, pos: np.ndarray, scores = np.zeros((3,), np.int16)):
-    '''
-    ### returns: 
-    a 3 int array, with the corresponding scores for each route
-    '''
-    x, y = pos
-    
-# agent code is temporary
-AGENT_CODE = 6
+
+def profile(func, *params):
+    t1 = time.perf_counter()
+    func(*params)
+    t2 = time.perf_counter()
+    print(f'time = {t2 - t1}')
+
 
 @njit
 def arotate(vel: np.ndarray, angle: np.float32):
@@ -45,14 +46,17 @@ def findNextSteps(
     straight = np.zeros_like(vel)
 
     left = arotate(vel, BETA)
+    normalize(left, SPEED)
     left[0] += pos[0]
     left[1] += pos[1]
 
     right = arotate(vel, -BETA)
+    normalize(right, SPEED)
     right[0] += pos[0]
     right[1] += pos[1]
     
     straight = vel
+    normalize(straight, SPEED)
     straight[0] += pos[0]
     straight[1] += pos[1]
 
@@ -63,9 +67,75 @@ def findNextSteps(
 
     return nextSteps
 
+def calcNumOfNodes(depth = AGENT_DEPTH+1):
+    i=0
+    n=0
+    while i < depth:
+        n+=3**i
+        i+=1
+    return n
+
+
+def calcLegalArea():
+    
+    R = RADIUS
+    W = WINDOW_WIDTH
+    H = WINDOW_HEIGHT
+
+    legal: int = 0
+
+    for x in np.arange(4 * R):
+        for y in np.arange(4 * R):
+            if distance(np.array([2 * R, 2 * R]), 
+                np.array([x, y])) <= 2 * R:
+                legal += 1
+    return legal
+
+UNIVERSAL_LEGAL_AREA = calcLegalArea()
+
+
 
 @njit
-def findNextVelocities(vel: np.mdarray):
+def acollision(grid: np.ndarray, steps: np.ndarray, pos: np.ndarray, r = RADIUS):
+    '''
+    regular collision that can have a different radius
+    and returns the amount of valid squares in the checked region
+    '''
+    w = WINDOW_WIDTH
+    h = WINDOW_HEIGHT
+
+    x1 = np.int16(pos[0])
+    y1 = np.int16(pos[1])
+
+    # check collision with walls
+    if x1 + r > w or x1 - r < 0:
+        return 1
+    if y1 + r > h or y1 - r < 0:
+        return 1
+
+    # check collision with the snake itself or another snake
+    for x in np.arange(max(x1 - 2*r, 0), min(x1 + 2*r, w)):
+        for y in np.arange(max(y1 - 2*r, 0), min(y1 + 2*r, h)):
+
+            isValid = 1
+            for i in np.arange(len(steps)):
+                if x == np.int0(steps[i, 0]) and y == np.int0(steps[i, 1]):
+                    isValid = 0
+                    break
+
+            if not isValid:
+                continue
+
+            if distance(pos, (x, y)) > 2 * r:
+                continue
+
+            if grid[x, y] != 0:
+                return 1
+
+    return 0
+
+@njit
+def findNextVelocities(vel: np.ndarray):
     left = np.zeros_like(vel)
     right = np.zeros_like(vel)
     straight = np.zeros_like(vel)
@@ -74,6 +144,10 @@ def findNextVelocities(vel: np.mdarray):
     straight = vel   
     right = arotate(vel, -BETA)
     
+    normalize(left, SPEED)
+    normalize(right, SPEED)
+    normalize(straight, SPEED)
+
     nextVelocites = np.empty((3, 2), np.float32)
     nextVelocites[0] = left
     nextVelocites[1] = straight
@@ -81,12 +155,13 @@ def findNextVelocities(vel: np.mdarray):
 
     return nextVelocites
 
+@njit
 def calculateRoute(
     grid: np.ndarray,
     lastSteps: np.ndarray,
     pos: np.ndarray,
     vel: np.ndarray,
-    depth = 4):
+    depth = AGENT_DEPTH):
     #TODO add a vels matrix
 
     #TODO make the recursion
@@ -100,37 +175,126 @@ def calculateRoute(
     ### returns:
     an int score for the given path
     '''
-    score = 0
+    score: np.int16 = 0
     nextSteps = findNextSteps(pos, vel)
     nextVelocities = findNextVelocities(vel)
-
 
     steps = np.copy(lastSteps)
     steps = updateLastSteps(steps, pos)
     
     # think as if the agent took
-    x, y = pos
+    x = np.int16(pos[0])
+    y = np.int16(pos[1])
+    
 
     keep = grid[x, y]
     grid[x, y] = AGENT_CODE
 
     # check for each one
     for i in np.arange(3, dtype= np.int16):
-        if collision(grid, steps, nextSteps[i]) == 0:
-        
-            score += calculateRoute(grid, steps, nextSteps[i], nextVelocities[i],  depth - 1)
+        if acollision(grid, steps, nextSteps[i, :]) == 0:
+            if depth == 1:
+                score += 1
+            else:
+                score += 1 + calculateRoute(grid, steps, nextSteps[i, :], nextVelocities[i, :],  depth - 1)
 
 
     grid[x, y] = keep
-        
+    return score    
     
+@njit
+def bestChoice(grid: np.ndarray, lastSteps: np.ndarray, pos: np.ndarray, vel: np.ndarray, depth = AGENT_DEPTH):
+    '''
+    ### returns: 
+    a 3 int array, with the corresponding scores for each route
+    '''
+    scores = np.zeros((3,), np.int16)
+    nextSteps = findNextSteps(pos, vel)
+    nextVelocities = findNextVelocities(vel)
+
+    steps = np.copy(lastSteps)
+    steps = updateLastSteps(steps, pos)
+    
+    # think as if the agent took
+    x = np.int16(pos[0])
+    y = np.int16(pos[1])
     
 
+    keep = grid[x, y]
+    grid[x, y] = AGENT_CODE
 
+    # check for each one
+    for i in np.arange(3, dtype= np.int16):
+        if acollision(grid, steps, nextSteps[i, :]) == 0:
+            scores[i] += 1 + calculateRoute(grid, steps, nextSteps[i, :], nextVelocities[i, :], depth)
+
+
+    grid[x, y] = keep
+    return scores
+
+@njit
+def findIndecies(scores:np.ndarray, val):
+    indexes = np.zeros (2, np.int16)
+    index=0
+    for i in np.arange(len(scores)):
+        if scores[i] == val:
+            indexes[index] = i
+            index+=1
+    return indexes
+
+@njit
+def pickFromIndecies(indecies:np.ndarray):
+    length = len(indecies) - 1
+    x = random.randint(0, length)
+    return indecies[x]
+
+NUM_OF_NODES = calcNumOfNodes()
 
 class Agent(Snake):
+    lastChoice = STRAIGHT
+
     def __init__(self, color, x, y, sid):
         super().__init__(color, x, y, sid)
 
+
+    def update_velocity(self):
+        choices = bestChoice(grid, 
+            np.copy(self.lastSteps), 
+            np.copy(self.pos), 
+            np.copy(self.vel)) 
+        choice = np.argmax(choices)
+
+        maxs = np.max(choices)
+        
+        
+
+        if len(choices[choices == maxs]) == 3:
+            if maxs == NUM_OF_NODES:
+                choice = STRAIGHT
+            else:
+                choice = self.lastChoice
+
+        elif len(choices[choices == maxs]) == 2:
+            indecies = findIndecies(choices, maxs)
+            choice = pickFromIndecies(indecies)
+
+        print(f'{choices}, the choice is {choice}, lastChoice = {self.lastChoice}')
+        self.lastChoice = choice
+        
+        # if the velocitie's y is positive
+        # then pick the opposite from his choice, to fix a bug  
+        if self.vel[1] > 0:
+            choice = 3 - (choice + 1)
+        
+        if choice == LEFT:
+            self.goLeft()
+        elif choice == RIGHT:
+            self.goRight()
+        else: # if choice == STRAIGHT
+            self.angle = 0
+        # rotate and normalize
+        super().update_velocity()
+
 if __name__ == '__main__':
-    print(findNextSteps(np.array([50, 50], np.float32), np.array([1, 1], np.float32)))
+    print (UNIVERSAL_LEGAL_AREA)
+

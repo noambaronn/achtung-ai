@@ -4,8 +4,11 @@ import numpy as np
 from numba import njit
 import random
 
+
 from constants import *
 from screen_globals import *
+
+
 
 @njit
 def distance(pos1: np.ndarray, pos2: np.ndarray):
@@ -68,7 +71,7 @@ def collision(grid: np.ndarray, steps: np.ndarray, pos: np.ndarray):
 
             isValid = 1
             for i in np.arange(len(steps)):
-                if x == steps[i, 0] and y == steps[i, 1]:
+                if x == np.int0(steps[i, 0]) and y == np.int0(steps[i, 1]):
                     isValid = 0
                     break
 
@@ -122,7 +125,7 @@ def updateLastSteps(source: np.ndarray, pos: np.ndarray, n=AMOUNT_OF_STEPS):
     `source`: the steps array. its shape is `[n, 2]`.
     `n`: the amount of steps
     '''
-    target = np.zeros((AMOUNT_OF_STEPS, 2), np.int16)
+    target = np.zeros((AMOUNT_OF_STEPS, 2), np.float32)
     for i in np.arange(n - 1):
         target[i + 1] = source[i]
     target[0, 0] = pos[0]
@@ -167,6 +170,12 @@ class Snake():
 
     def normalize(self):
         normalize(self.vel, SPEED)
+    
+    def goLeft(self):
+        self.angle = -BETA
+    
+    def goRight(self):
+        self.angle = BETA
 
     def update(self):
         global grid

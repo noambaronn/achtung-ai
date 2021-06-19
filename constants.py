@@ -1,5 +1,7 @@
 import numpy as np
 
+
+
 # colors
 DARKGREY = (59, 59, 64)
 HEAD_COLOR = (254, 255, 1)
@@ -27,3 +29,12 @@ DRAW_SAFETY_CONST = 2
 
 FPS = 60
 AMOUNT_OF_STEPS = 5
+
+# agent code is temporary
+AGENT_CODE = 6
+AGENT_DEPTH = 5
+
+# agent choices index
+LEFT = 0
+STRAIGHT = 1
+RIGHT = 2

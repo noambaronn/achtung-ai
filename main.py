@@ -1,15 +1,13 @@
 import pygame
-from time import sleep
-from math import radians, sin, cos, sqrt
-import keyboard
 import numpy as np
-from numba import njit
-import random
+
 
 from constants import *
 from screen_globals import *
 from snake import *
 from player import *
+
+from snakes import *
 
 
 pygame.init()
@@ -39,10 +37,10 @@ while not finish:
         if event.type == pygame.QUIT:
             finish = True
 
-    for p in players:
-        if p.isAlive:
-            p.update()
-            p.draw()
+    for s in snakes:
+        if s.isAlive:
+            s.update()
+            s.draw()
 
     clock.tick(FPS)
     pygame.display.flip()

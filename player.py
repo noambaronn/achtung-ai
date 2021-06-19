@@ -19,15 +19,11 @@ class Player(Snake):
         
     def update_velocity(self):
         if keyboard.is_pressed(self.left):
-            self.angle = BETA
+            self.goLeft()
         elif keyboard.is_pressed(self.right):
-            self.angle = -BETA
+            self.goRight()
         else:
             self.angle = 0
         # rotate and normalize
         super().update_velocity()
         
-snake1 = Player(COLORS_ARRAY[1], WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8, 1, 'A', 'D')
-snake2 = Player(COLORS_ARRAY[2], WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 2, 'LEFT', 'RIGHT')
-snake3 = Player(COLORS_ARRAY[3], WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3, 3, 'M', 'N')
-players = [snake1,snake2, snake3]
