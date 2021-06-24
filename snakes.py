@@ -1,9 +1,14 @@
 from typing import List
 
+from numpy import False_, true_divide
+
 from player import *
 from agent import *
 
 snakes = List[Snake]
-player = Player(COLORS_ARRAY[1], WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8, 1, 'A', 'D')
-agent = Agent(COLORS_ARRAY[3], WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3, 3)
-snakes = [agent]
+player1 = Player(COLORS_ARRAY[1], 1, 'A', 'D')
+player2 = Player(COLORS_ARRAY[2], 2, 'left', 'right')
+player3 = Player(COLORS_ARRAY[3], 3, 'N', 'M')
+agent = Agent(COLORS_ARRAY[3], 3)
+snakes = [player1, player2, player3, agent]
+

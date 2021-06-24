@@ -12,11 +12,12 @@ from snake import *
 
 class Player(Snake):
     
-    def __init__(self, color, x, y, sid, left, right):
-        super().__init__(color, x, y, sid)
+    def __init__(self, color, sid, left, right, x = -1, y = -1):
+        super().__init__(color, sid, x, y)
         self.left = left
         self.right = right
         
+
     def update_velocity(self):
         if keyboard.is_pressed(self.left):
             self.goLeft()

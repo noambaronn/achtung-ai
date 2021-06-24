@@ -5,8 +5,11 @@ from constants import *
 
 screen = pygame.display.set_mode(WINDOW_SIZE)
 screen.fill(DARKGREY)
+creamC = (255, 253, 203)
+pygame.draw.rect(screen, creamC, [750, 0, 150, 600], 0)
 pygame.display.flip()
-pygame.display.set_caption("Achtung")
+pygame.display.set_caption("Achtung, Die Kurve!")
+
 
 
 grid = np.zeros(

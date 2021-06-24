@@ -141,15 +141,23 @@ class Snake():
     vel = np.array((0.0, 0.0), np.float32)
     lastSteps = np.ndarray((AMOUNT_OF_STEPS, 2), np.int16)
     holeTimer = 0
+    score = 0
 
-    def __init__(self, color, x, y, sid):
+    def __init__(self, color, sid, x = -1, y = -1):
         self.color = color
         self.pos = np.array((x, y), np.float32)
+        if x == -1 and y == -1:
+            self.generatePos()
         self.vel = np.array((3, 3), np.float32)
         for i in range(AMOUNT_OF_STEPS):
-            self.lastSteps[i, 0] = x
-            self.lastSteps[i, 1] = y
+            self.lastSteps[i, 0] = self.pos[0]
+            self.lastSteps[i, 1] = self.pos[1]
         self.sid = sid
+
+    def generatePos(self):
+        self.pos[0] = random.randrange(WINDOW_BORDER, WINDOW_WIDTH - WINDOW_BORDER)
+        self.pos[1] = random.randrange(WINDOW_BORDER, WINDOW_HEIGHT - WINDOW_BORDER)
+       
 
     def update_velocity(self):
         self.rotate()
@@ -193,7 +201,7 @@ class Snake():
         # check collision
         if self.holeTimer == 0:
             if (collision(grid, self.lastSteps, self.pos)):
-                self.isAlive = False
+                self.isAlive = False     
         else:
             # check collision with walls
             r = RADIUS

@@ -67,33 +67,6 @@ def findNextSteps(
 
     return nextSteps
 
-def calcNumOfNodes(depth = AGENT_DEPTH+1):
-    i=0
-    n=0
-    while i < depth:
-        n+=3**i
-        i+=1
-    return n
-
-
-def calcLegalArea():
-    
-    R = RADIUS
-    W = WINDOW_WIDTH
-    H = WINDOW_HEIGHT
-
-    legal: int = 0
-
-    for x in np.arange(4 * R):
-        for y in np.arange(4 * R):
-            if distance(np.array([2 * R, 2 * R]), 
-                np.array([x, y])) <= 2 * R:
-                legal += 1
-    return legal
-
-UNIVERSAL_LEGAL_AREA = calcLegalArea()
-
-
 
 @njit
 def acollision(grid: np.ndarray, steps: np.ndarray, pos: np.ndarray, r = RADIUS):
@@ -226,7 +199,7 @@ def bestChoice(grid: np.ndarray, lastSteps: np.ndarray, pos: np.ndarray, vel: np
     # check for each one
     for i in np.arange(3, dtype= np.int16):
         if acollision(grid, steps, nextSteps[i, :]) == 0:
-            scores[i] += 1 + calculateRoute(grid, steps, nextSteps[i, :], nextVelocities[i, :], depth)
+            scores[i] += 1 + calculateRoute(grid, steps, nextSteps[i, :], nextVelocities[i, :] * 2, depth)
 
 
     grid[x, y] = keep
@@ -248,13 +221,11 @@ def pickFromIndecies(indecies:np.ndarray):
     x = random.randint(0, length)
     return indecies[x]
 
-NUM_OF_NODES = calcNumOfNodes()
-
 class Agent(Snake):
     lastChoice = STRAIGHT
 
-    def __init__(self, color, x, y, sid):
-        super().__init__(color, x, y, sid)
+    def __init__(self, color, sid, x = -1, y = -1):
+        super().__init__(color, sid, x, y)
 
 
     def update_velocity(self):
@@ -266,7 +237,7 @@ class Agent(Snake):
 
         maxs = np.max(choices)
         
-        
+        x, y = self.pos
 
         if len(choices[choices == maxs]) == 3:
             if maxs == NUM_OF_NODES:
@@ -277,14 +248,15 @@ class Agent(Snake):
         elif len(choices[choices == maxs]) == 2:
             indecies = findIndecies(choices, maxs)
             choice = pickFromIndecies(indecies)
-
-        print(f'{choices}, the choice is {choice}, lastChoice = {self.lastChoice}')
+        
         self.lastChoice = choice
         
         # if the velocitie's y is positive
         # then pick the opposite from his choice, to fix a bug  
-        if self.vel[1] > 0:
+        if y > WINDOW_HEIGHT - WINDOW_BORDER or self.vel[1] > 0:
             choice = 3 - (choice + 1)
+        
+        print(choices, f'choice = {CHOICES[choice]}')
         
         if choice == LEFT:
             self.goLeft()
@@ -296,5 +268,5 @@ class Agent(Snake):
         super().update_velocity()
 
 if __name__ == '__main__':
-    print (UNIVERSAL_LEGAL_AREA)
+    pass
 

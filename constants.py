@@ -14,9 +14,12 @@ COLORS_ARRAY = np.array([
     [128, 0, 128]
 ])
 
-WINDOW_WIDTH: np.int16 = 900
+WINDOW_WIDTH: np.int16 = 750
 WINDOW_HEIGHT: np.int16 = 600
-WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)
+ADDED_WALL : np.int16 = 150
+# used by the generate function, designed to limit the start position of a snake 
+WINDOW_BORDER: np.int16 = int((WINDOW_HEIGHT/ WINDOW_WIDTH) * 300)
+WINDOW_SIZE = (WINDOW_WIDTH + ADDED_WALL, WINDOW_HEIGHT)
 
 RADIUS: np.int16 = 5
 
@@ -32,9 +35,11 @@ AMOUNT_OF_STEPS = 5
 
 # agent code is temporary
 AGENT_CODE = 6
-AGENT_DEPTH = 5
+AGENT_DEPTH = 3
+NUM_OF_NODES = sum([3 ** i for i in range(AGENT_DEPTH + 1)])
 
 # agent choices index
 LEFT = 0
 STRAIGHT = 1
 RIGHT = 2
+CHOICES = ['left', 'straight', 'right']
